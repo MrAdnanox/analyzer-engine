@@ -1,4 +1,3 @@
-# FICHIER: .github/workflows/ci.yml (VERSION FINALE ET DÉFINITIVE)
 name: CI - Analyzer Engine
 
 on:
