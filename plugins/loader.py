@@ -2,7 +2,6 @@
 import os
 import importlib.util
 import logging
-from typing import List
 from .plugin_interface import IJabbarRootPlugin
 from ingestion.parsing.parser_registry import parser_registry
 from ingestion.analysis.analyzer_registry import analyzer_registry

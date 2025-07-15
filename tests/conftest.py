@@ -2,7 +2,6 @@
 # L'import de testcontainers est déplacé à l'intérieur de la fixture
 # pour n'être chargé que lorsque la fixture est réellement utilisée.
 import pytest
-import aiosqlite
 # from testcontainers.postgres import PostgresContainer <-- SUPPRIMER CETTE LIGNE
 from ingestion.storage.repositories.sqlite_graph_repository import SQLiteGraphRepository
 from ingestion.storage.repositories.postgres_repository import PostgresRepository

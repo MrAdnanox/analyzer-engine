@@ -1,6 +1,6 @@
 # FICHIER: analyzer-engine/core/models/graph_models.py
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Literal
+from typing import Literal
 
 class CodeEntity(BaseModel):
     """Représente un nœud dans notre graphe de connaissance : une fonction, une classe, un fichier."""

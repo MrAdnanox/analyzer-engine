@@ -1,6 +1,5 @@
 # analyzer-engine/ingestion/parsing/parsers/python_parser.py
 import ast
-from typing import List, Dict, Any
 
 from core.contracts.parser_contract import IParser
 from core.models.ast_models import NormalizedAST, ASTNode

@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 # IMPORTS STRATÉGIQUES :
 # Dépendance à l'abstraction (le contrat) et aux exceptions définies dans core.
 from core.contracts.repository_contract import ICodeRepository
-from core.exceptions.base_exceptions import RepositoryError, EntityNotFoundError
+from core.exceptions.base_exceptions import RepositoryError
 
 logger = logging.getLogger(__name__)
 
