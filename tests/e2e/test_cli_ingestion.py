@@ -1,14 +1,15 @@
-# FICHIER: tests/e2e/test_cli_ingestion.py (NOUVEAU)
-# Test de bout-en-bout. Simule une action utilisateur réelle (appel CLI)
-# et vérifie le résultat final dans les bases de données.
+# Fichier: tests/e2e/test_cli_ingestion.py (MODIFIÉ)
+
 import pytest
 import subprocess
 import sys
 import os
-
+# AJOUTER CET IMPORT
+from ingestion.chunker import DocumentChunk
 
 @pytest.mark.e2e
-async def test_cli_ingest_e2e(sqlite_repo, postgres_repo, tmp_path):
+# AJOUTER `mocker` AUX ARGUMENTS DU TEST
+async def test_cli_ingest_e2e(sqlite_repo, postgres_repo, tmp_path, mocker):
     """
     Valide le flux complet : CLI -> Parsing -> Analysis -> Storage.
     """
@@ -16,8 +17,27 @@ async def test_cli_ingest_e2e(sqlite_repo, postgres_repo, tmp_path):
     sample_code_path = tmp_path / "sample_code.py"
     sample_code_path.write_text("def my_func():\n    pass\n")
 
+    # On mock la méthode qui fait l'appel réseau.
+    # On définit une fonction qui simule le comportement de embed_chunks
+    def mock_embed_chunks(chunks: list[DocumentChunk], progress_callback=None):
+        # La vraie fonction modifie les chunks en place, on doit faire pareil.
+        for chunk in chunks:
+            # On simule un embedding de la bonne dimension
+            chunk.embedding = [0.0] * 768 
+        return chunks
+
+    mocker.patch(
+        'ingestion.embedder.EmbeddingGenerator.embed_chunks', 
+        side_effect=mock_embed_chunks
+    )
+
     # Act: Exécuter la commande CLI comme un processus externe
-    command = [sys.executable, "cli.py", "ingest", str(sample_code_path)]
+    command = [
+        sys.executable,
+        "cli.py",
+        "ingest",
+        str(sample_code_path)
+    ]
 
     # Utiliser les mêmes BDD que les fixtures pour la validation
     os.environ["SQLITE_DB_PATH"] = sqlite_repo.db_path
