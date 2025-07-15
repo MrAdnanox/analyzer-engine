@@ -4,26 +4,21 @@
 Semantic chunking implementation for intelligent document splitting.
 """
 
-import os
 import re
 import logging
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 import asyncio
 
 from dotenv import load_dotenv
 
-# Load environment variables
+from .providers import get_ingestion_model
+from core.models.db import IngestionConfig
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# --- NOUVELLE SECTION D'IMPORTS NETTOYÉE ---
-# Imports directs et propres après le refactoring architectural.
-# Toute la logique 'try...except' pour les imports a été supprimée.
-from .providers import get_ingestion_model
-from core.models.db import IngestionConfig
-# --- FIN DE LA SECTION D'IMPORTS ---
 
 
 # Initialize clients with flexible providers
