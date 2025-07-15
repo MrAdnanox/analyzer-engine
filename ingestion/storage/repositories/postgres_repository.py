@@ -1,7 +1,8 @@
-# FICHIER: analyzer-engine/ingestion/storage/repositories/postgres_repository.py
+# FICHIER: analyzer-engine/ingestion/storage/repositories/postgres_repository.py (MODIFIÉ)
 import os
 import json
 import logging
+import asyncio  # <-- AJOUTER CET IMPORT
 from typing import List, Dict, Any, Optional
 from contextlib import asynccontextmanager
 
@@ -18,40 +19,52 @@ logger = logging.getLogger(__name__)
 
 
 class PostgresRepository(IVectorRepository):
-    """Implémentation du contrat IVectorRepository pour PostgreSQL avec pgvector."""
-
-    _pool: Optional[Pool] = None
-
     def __init__(self):
         self.database_url = os.getenv("DATABASE_URL")
         if not self.database_url:
             raise RepositoryError("DATABASE_URL environment variable not set")
+        self._pool: Optional[Pool] = None
         logger.info("PostgresRepository instance created.")
 
     async def initialize(self) -> None:
-        if PostgresRepository._pool is None:
+        if self._pool is not None and not self._pool._closed:
+            return
+
+        # ======================= LA RÉSILIENCE AU BON ENDROIT =======================
+        # La logique de retry est maintenant DANS le composant. Il est robuste par conception.
+        max_retries = 5
+        retry_delay = 2  # secondes
+        for attempt in range(max_retries):
             try:
-                PostgresRepository._pool = await asyncpg.create_pool(
-                    self.database_url, min_size=5, max_size=20, command_timeout=60
+                self._pool = await asyncpg.create_pool(
+                    self.database_url, min_size=2, max_size=5, command_timeout=30
                 )
-                logger.info("PostgreSQL connection pool initialized.")
+                logger.info(f"PostgreSQL pool initialized on attempt {attempt + 1}")
+                return  # Succès, on sort de la méthode
             except Exception as e:
-                logger.error(
-                    f"Failed to initialize PostgreSQL pool: {e}", exc_info=True
+                logger.warning(
+                    f"Attempt {attempt + 1}/{max_retries} to connect to PostgreSQL failed: {e}"
                 )
-                raise RepositoryError(f"Failed to initialize PostgreSQL pool: {e}")
+                if attempt == max_retries - 1:
+                    logger.error("All attempts to connect to PostgreSQL failed.")
+                    raise RepositoryError(
+                        f"Failed to initialize PostgreSQL pool after {max_retries} retries: {e}"
+                    )
+                await asyncio.sleep(retry_delay * (attempt + 1))  # Backoff simple
+        # ============================================================================
 
     async def close(self) -> None:
-        if PostgresRepository._pool:
-            await PostgresRepository._pool.close()
-            PostgresRepository._pool = None
-            logger.info("PostgreSQL connection pool closed.")
+        if self._pool:
+            await self._pool.close()
+            self._pool = None
+            logger.info("PostgreSQL connection pool closed for instance.")
 
     @asynccontextmanager
     async def _get_connection(self):
         if not self._pool:
             await self.initialize()
 
+        # Le reste du code utilise self._pool qui est maintenant propre à l'instance
         async with self._pool.acquire() as connection:
             yield connection
 

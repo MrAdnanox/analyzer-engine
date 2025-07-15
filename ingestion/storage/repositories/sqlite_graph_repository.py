@@ -64,7 +64,7 @@ class SQLiteGraphRepository(ICodeRepository):
 
     async def close(self) -> None:
         """Ferme la connexion à la base de données si elle est ouverte."""
-        if self.conn and not self.conn.is_closed():
+        if self.conn:
             await self.conn.close()
             self.conn = None
             logger.info("SQLiteGraphRepository connection closed.")

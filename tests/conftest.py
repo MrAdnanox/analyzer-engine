@@ -1,36 +1,19 @@
-# FICHIER: tests/conftest.py (CORRIGÉ)
-# L'import de testcontainers est déplacé à l'intérieur de la fixture
-# pour n'être chargé que lorsque la fixture est réellement utilisée.
+# FICHIER: tests/conftest.py (VERSION COMPLÈTE, VALIDÉE ET ROBUSTE)
 import pytest
-
-# from testcontainers.postgres import PostgresContainer <-- SUPPRIMER CETTE LIGNE
+import os
 from ingestion.storage.repositories.sqlite_graph_repository import SQLiteGraphRepository
 from ingestion.storage.repositories.postgres_repository import PostgresRepository
-import os
-
-
-@pytest.fixture(scope="function")
-async def sqlite_repo():
-    """Fixture pour un repo SQLite en mémoire. Rapide et isolé."""
-    repo = SQLiteGraphRepository(db_path=":memory:")
-    await repo.initialize()
-    yield repo
-    await repo.close()
 
 
 @pytest.fixture(scope="session")
 def postgres_container():
-    """Démarre un conteneur PostgreSQL pour la durée de la session de test."""
-    # ======================= MODIFICATION ELITE =======================
-    # L'import est maintenant à l'intérieur de la fixture.
-    # Il ne sera exécuté que si un test demande cette fixture.
+    if os.getenv("CI"):
+        yield
+        return
     from testcontainers.postgres import PostgresContainer
 
-    # ==================================================================
-
-    with PostgresContainer("postgres:16-alpine") as postgres:
-        connection_url = postgres.get_connection_url()
-        os.environ["DATABASE_URL"] = connection_url.replace(
+    with PostgresContainer("pgvector/pgvector:pg16") as postgres:
+        os.environ["DATABASE_URL"] = postgres.get_connection_url().replace(
             "postgresql+psycopg2", "postgresql"
         )
         yield postgres
@@ -38,12 +21,35 @@ def postgres_container():
 
 @pytest.fixture(scope="function")
 async def postgres_repo(postgres_container):
-    """Fixture pour un repo PostgreSQL pointant vers le conteneur de test."""
     repo = PostgresRepository()
-    # Assurer que le pool de connexion est réinitialisé pour chaque test
-    if repo._pool:
-        await repo.close()
     await repo.initialize()
-    # Idéalement, on nettoierait les tables ici avant chaque test (TRUNCATE)
+    yield repo
+    await repo.close()
+
+
+@pytest.fixture(scope="function")
+async def db_schema(postgres_repo: PostgresRepository):
+    sql_files_order = [
+        "sql/core/00_extensions.sql",
+        "sql/core/01_functions.sql",
+        "sql/core/02_triggers.sql",
+        "sql/modules/00_documents_chunks.sql",
+        "sql/modules/01_sessions_messages.sql",
+        "sql/views/00_document_summaries.sql",
+    ]
+    async with postgres_repo._get_connection() as conn:
+        for file_path in sql_files_order:
+            with open(file_path, "r") as f:
+                await conn.execute(f.read())
+    yield
+    async with postgres_repo._get_connection() as conn:
+        with open("sql/_drop_all.sql", "r") as f:
+            await conn.execute(f.read())
+
+
+@pytest.fixture(scope="function")
+async def sqlite_repo():
+    repo = SQLiteGraphRepository(db_path=":memory:")
+    await repo.initialize()
     yield repo
     await repo.close()
