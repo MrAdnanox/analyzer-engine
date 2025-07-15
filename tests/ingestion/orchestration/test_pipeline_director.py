@@ -1,4 +1,3 @@
-# FICHIER: tests/ingestion/orchestration/test_pipeline_director.py (CORRIGÉ)
 import pytest
 from unittest.mock import AsyncMock
 from ingestion.orchestration.pipeline_director import PipelineDirector
@@ -9,48 +8,52 @@ from ingestion.orchestration.execution_context import ExecutionContext
 async def test_pipeline_director_stage_execution_order(mocker):
     """
     Valide que le PipelineDirector exécute chaque étape dans le bon ordre
-    et transmet le contexte correctement.
+    en utilisant des mocks pour isoler le test de l'implémentation des étapes.
     """
-    # Arrange: Mocker les étapes du pipeline
+    # Arrange: Créer des mocks pour les étapes du pipeline
     mock_stage1 = AsyncMock()
     mock_stage2 = AsyncMock()
 
-    mock_stage1.execute.return_value = ExecutionContext(
+    # Simuler le flux de données à travers les étapes
+    context_after_stage1 = ExecutionContext(
         file_path="test.py",
         source_code="",
         language="python",
-        entities=[{"name": "entity1", "type": "FUNCTION"}],
+        entities=[{"name": "entity1"}],
     )
-    mock_stage2.execute.return_value = ExecutionContext(
-        file_path="test.py",
-        source_code="",
-        language="python",
-        entities=[{"name": "entity1", "type": "FUNCTION"}],
-        chunks=[{"content": "chunk1", "embedding": [0.1]}],
-    )
+    mock_stage1.execute.return_value = context_after_stage1
 
-    # ======================= MODIFICATION ELITE =======================
-    # 1. On instancie d'abord le directeur.
+    context_after_stage2 = ExecutionContext(
+        file_path="test.py",
+        source_code="",
+        language="python",
+        entities=[{"name": "entity1"}],
+        chunks=[{"content": "chunk1"}],
+    )
+    mock_stage2.execute.return_value = context_after_stage2
+
+    # Isoler le PipelineDirector de ses dépendances réelles en patchant
+    # l'attribut `pipeline` de l'instance que nous allons tester.
     director = PipelineDirector()
-
-    # 2. On utilise `mocker.patch.object` pour remplacer l'attribut `pipeline`
-    #    SUR CETTE INSTANCE SPÉCIFIQUE.
     mocker.patch.object(director, "pipeline", [mock_stage1, mock_stage2])
-    # ==================================================================
 
-    context = ExecutionContext(file_path="test.py", source_code="", language="python")
-
-    # Act
-    # On utilise l'instance que nous avons créée et patchée.
-    final_context = await director.process(
-        context.file_path, context.source_code, context.language
+    initial_context = ExecutionContext(
+        file_path="test.py", source_code="", language="python"
     )
 
-    # Assert
-    mock_stage1.execute.assert_called_once()
-    mock_stage2.execute.assert_called_once()
+    # Act: Exécuter le processus sur le directeur patché
+    final_context = await director.process(
+        initial_context.file_path, initial_context.source_code, initial_context.language
+    )
 
-    assert mock_stage2.execute.call_args[0][0].entities == [
-        {"name": "entity1", "type": "FUNCTION"}
-    ]
-    assert final_context.chunks == [{"content": "chunk1", "embedding": [0.1]}]
+    # Assert: Vérifier que les mocks ont été appelés correctement
+    mock_stage1.execute.assert_called_once()
+    # Vérifier que le contexte initial a bien été passé à la première étape
+    assert mock_stage1.execute.call_args[0][0].file_path == "test.py"
+
+    mock_stage2.execute.assert_called_once()
+    # Vérifier que le contexte de la première étape a été passé à la seconde
+    assert mock_stage2.execute.call_args[0][0] == context_after_stage1
+
+    # Vérifier que le contexte final est bien celui retourné par la dernière étape
+    assert final_context == context_after_stage2
