@@ -43,7 +43,9 @@ class EmbeddingGenerator:
             max_retries: Maximum number of retry attempts for failed API calls.
             retry_delay: Delay between retries in seconds.
         """
-        self.provider: EmbeddingProvider = get_embedder()
+
+        from .providers import get_embedder
+        self.provider = get_embedder()
         self.batch_size = batch_size
         self.max_retries = max_retries
         self.retry_delay = retry_delay

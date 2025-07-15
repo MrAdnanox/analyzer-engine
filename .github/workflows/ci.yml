@@ -63,5 +63,7 @@ jobs:
       env:
         # L'URL de la BDD est construite à partir des services de la CI
         DATABASE_URL: postgresql://test:test@localhost:5432/test
+        LLM_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
       run: |
         pytest --cov=ingestion --cov=core --cov-report=term-missing --cov-fail-under=85
