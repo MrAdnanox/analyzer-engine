@@ -52,6 +52,12 @@ jobs:
     - name: Run tests and generate coverage report
       env:
         DATABASE_URL: postgresql://test:test@localhost:5432/test
+        # ======================= CONTRÔLE TOTAL DES DÉPENDANCES =======================
+        # Nous fournissons des valeurs factices pour satisfaire le code qui lit l'env,
+        # même si les mocks empêcheront leur utilisation réelle.
+        LLM_API_KEY: "ci-mock-key"
+        EMBEDDING_API_KEY: "ci-mock-key"
+        # ============================================================================
         CI: "true"
       run: |
         pytest --cov=ingestion --cov=core --cov-report=term-missing --cov-fail-under=40
