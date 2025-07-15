@@ -1,4 +1,3 @@
-# Fichier: tests/conftest.py
 import pytest
 import os
 from ingestion.storage.repositories.sqlite_graph_repository import SQLiteGraphRepository
