@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
+
 class ICodeRepository(ABC):
     """
     Contrat pour la persistance et la récupération de la connaissance du code.

@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 # La configuration de la base de données est une responsabilité de l'implémentation.
 DB_FILE = "code_graph.sqlite"
 
+
 class SQLiteGraphRepository(ICodeRepository):
     """
     Implémentation du contrat ICodeRepository utilisant une base de données SQLite locale.
@@ -24,13 +25,15 @@ class SQLiteGraphRepository(ICodeRepository):
     def __init__(self, db_path: str = DB_FILE):
         """
         Initialise le repository.
-        
+
         Args:
             db_path: Chemin vers le fichier de la base de données SQLite.
         """
         self.db_path = db_path
         self.conn: aiosqlite.Connection | None = None
-        logger.info(f"SQLiteGraphRepository instance created for database at: {self.db_path}")
+        logger.info(
+            f"SQLiteGraphRepository instance created for database at: {self.db_path}"
+        )
 
     async def initialize(self) -> None:
         """
@@ -43,16 +46,20 @@ class SQLiteGraphRepository(ICodeRepository):
 
         try:
             # Créer le répertoire parent s'il n'existe pas
-            os.makedirs(os.path.dirname(self.db_path) or '.', exist_ok=True)
+            os.makedirs(os.path.dirname(self.db_path) or ".", exist_ok=True)
             self.conn = await aiosqlite.connect(self.db_path)
             # Utiliser aiosqlite.Row pour accéder aux colonnes par leur nom.
             self.conn.row_factory = aiosqlite.Row
             # Activer les contraintes de clé étrangère, crucial pour l'intégrité des données.
             await self.conn.execute("PRAGMA foreign_keys = ON;")
             await self._create_tables_if_not_exists()
-            logger.info(f"SQLiteGraphRepository initialized. Database at: {self.db_path}")
+            logger.info(
+                f"SQLiteGraphRepository initialized. Database at: {self.db_path}"
+            )
         except Exception as e:
-            logger.error(f"Failed to initialize SQLiteGraphRepository: {e}", exc_info=True)
+            logger.error(
+                f"Failed to initialize SQLiteGraphRepository: {e}", exc_info=True
+            )
             raise RepositoryError(f"Failed to initialize SQLiteGraphRepository: {e}")
 
     async def close(self) -> None:
@@ -69,7 +76,8 @@ class SQLiteGraphRepository(ICodeRepository):
 
         try:
             # Utilisation de executescript pour exécuter plusieurs instructions dans une transaction.
-            await self.conn.executescript("""
+            await self.conn.executescript(
+                """
                 CREATE TABLE IF NOT EXISTS entities (
                     id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -91,7 +99,8 @@ class SQLiteGraphRepository(ICodeRepository):
                 CREATE INDEX IF NOT EXISTS idx_entities_name ON entities(name);
                 CREATE INDEX IF NOT EXISTS idx_relationships_source ON relationships(source_id);
                 CREATE INDEX IF NOT EXISTS idx_relationships_target ON relationships(target_id);
-            """)
+            """
+            )
             await self.conn.commit()
             logger.debug("Tables 'entities' and 'relationships' are ready.")
         except Exception as e:
@@ -106,9 +115,9 @@ class SQLiteGraphRepository(ICodeRepository):
         if not self.conn:
             await self.initialize()
 
-        entities = file_data.get('entities', [])
-        relationships = file_data.get('relationships', [])
-        file_path = file_data.get('file_path')
+        entities = file_data.get("entities", [])
+        relationships = file_data.get("relationships", [])
+        file_path = file_data.get("file_path")
 
         if not entities or not file_path:
             logger.warning("No entities or file_path provided in file_data. Skipping.")
@@ -116,7 +125,7 @@ class SQLiteGraphRepository(ICodeRepository):
 
         entities_added_count = 0
         relations_added_count = 0
-        
+
         # Utiliser une transaction explicite pour garantir l'atomicité.
         async with self.conn.cursor() as cursor:
             try:
@@ -124,42 +133,59 @@ class SQLiteGraphRepository(ICodeRepository):
                 for entity in entities:
                     await cursor.execute(
                         "INSERT OR IGNORE INTO entities (name, type, file_path, source_code) VALUES (?, ?, ?, ?)",
-                        (entity['name'], entity['type'], file_path, entity.get('source_code', ''))
+                        (
+                            entity["name"],
+                            entity["type"],
+                            file_path,
+                            entity.get("source_code", ""),
+                        ),
                     )
                     if cursor.rowcount > 0:
                         entities_added_count += 1
 
                 # 2. Récupérer les IDs des entités pour créer les relations
                 entity_ids = {}
-                await cursor.execute("SELECT id, name FROM entities WHERE file_path = ?", (file_path,))
+                await cursor.execute(
+                    "SELECT id, name FROM entities WHERE file_path = ?", (file_path,)
+                )
                 rows = await cursor.fetchall()
                 for row in rows:
-                    entity_ids[row['name']] = row['id']
-                
+                    entity_ids[row["name"]] = row["id"]
+
                 # 3. Insérer toutes les relations
                 for rel in relationships:
-                    source_id = entity_ids.get(rel['source'])
-                    target_id = entity_ids.get(rel['target'])
-                    
+                    source_id = entity_ids.get(rel["source"])
+                    target_id = entity_ids.get(rel["target"])
+
                     if source_id and target_id:
                         await cursor.execute(
                             "INSERT OR IGNORE INTO relationships (source_id, target_id, type) VALUES (?, ?, ?)",
-                            (source_id, target_id, rel['type'])
+                            (source_id, target_id, rel["type"]),
                         )
                         if cursor.rowcount > 0:
                             relations_added_count += 1
                     else:
-                        logger.warning(f"Could not find IDs for relationship: {rel}. Skipping.")
-                
+                        logger.warning(
+                            f"Could not find IDs for relationship: {rel}. Skipping."
+                        )
+
                 await self.conn.commit()
-                logger.info(f"Added {entities_added_count} new entities and {relations_added_count} new relationships for {file_path}.")
+                logger.info(
+                    f"Added {entities_added_count} new entities and {relations_added_count} new relationships for {file_path}."
+                )
 
             except Exception as e:
                 await self.conn.rollback()
-                logger.error(f"Transaction failed for {file_path}. Rolling back. Error: {e}", exc_info=True)
+                logger.error(
+                    f"Transaction failed for {file_path}. Rolling back. Error: {e}",
+                    exc_info=True,
+                )
                 raise RepositoryError(f"Failed to add code structure: {e}")
 
-        return {"entities_added": entities_added_count, "relations_added": relations_added_count}
+        return {
+            "entities_added": entities_added_count,
+            "relations_added": relations_added_count,
+        }
 
     async def find_entity_relationships(self, entity_name: str) -> List[Dict[str, Any]]:
         """
@@ -170,7 +196,9 @@ class SQLiteGraphRepository(ICodeRepository):
             await self.initialize()
 
         if not os.path.exists(self.db_path):
-            logger.warning(f"Graph database file '{self.db_path}' not found. Run ingestion first.")
+            logger.warning(
+                f"Graph database file '{self.db_path}' not found. Run ingestion first."
+            )
             return []
 
         results = []
@@ -178,7 +206,7 @@ class SQLiteGraphRepository(ICodeRepository):
             async with self.conn.cursor() as cursor:
                 # La recherche est insensible à la casse et partielle pour plus de flexibilité.
                 search_term = f"%{entity_name}%"
-                
+
                 # Recherche des relations sortantes ET entrantes en une seule requête optimisée.
                 # Utilisation de UNION pour combiner les deux cas de figure.
                 query = """
@@ -202,41 +230,50 @@ class SQLiteGraphRepository(ICodeRepository):
                     JOIN entities t ON r.target_id = t.id
                     WHERE t.name LIKE ?
                 """
-                
+
                 await cursor.execute(query, (search_term, search_term))
                 relationships = await cursor.fetchall()
-                
+
                 if not relationships:
-                    logger.info(f"No relationships found for entity matching '{entity_name}'.")
+                    logger.info(
+                        f"No relationships found for entity matching '{entity_name}'."
+                    )
                     return []
 
                 for rel in relationships:
                     fact = {
                         "source": f"{rel['source_name']} ({rel['source_type']})",
-                        "relationship": rel['rel_type'],
-                        "target": f"{rel['target_name']} ({rel['target_type']})"
+                        "relationship": rel["rel_type"],
+                        "target": f"{rel['target_name']} ({rel['target_type']})",
                     }
                     if fact not in results:
                         results.append(fact)
         except Exception as e:
-            logger.error(f"Error querying code graph for entity '{entity_name}': {e}", exc_info=True)
+            logger.error(
+                f"Error querying code graph for entity '{entity_name}': {e}",
+                exc_info=True,
+            )
             raise RepositoryError(f"Error querying code graph: {e}")
 
         return results
-    
+
     async def clean_db(self) -> None:
         """Supprime toutes les données des tables du graphe."""
         if not self.conn:
             await self.initialize()
-            
+
         try:
             async with self.conn.cursor() as cursor:
                 await cursor.execute("DELETE FROM relationships;")
                 await cursor.execute("DELETE FROM entities;")
                 # Réinitialise la séquence des IDs auto-incrémentés pour une base propre.
-                await cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('entities');")
+                await cursor.execute(
+                    "DELETE FROM sqlite_sequence WHERE name IN ('entities');"
+                )
             await self.conn.commit()
-            logger.warning("Graph database has been cleaned (all entities and relationships removed).")
+            logger.warning(
+                "Graph database has been cleaned (all entities and relationships removed)."
+            )
         except Exception as e:
             await self.conn.rollback()
             logger.error(f"Failed to clean graph database: {e}", exc_info=True)

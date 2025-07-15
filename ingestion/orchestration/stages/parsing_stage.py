@@ -2,6 +2,8 @@
 from .base_stage import IPipelineStage
 from ..execution_context import ExecutionContext
 from ingestion.parsing.parser_registry import parser_registry
+
+
 class ParsingStage(IPipelineStage):
     """Étape responsable du parsing du code source."""
 

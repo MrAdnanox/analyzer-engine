@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from ingestion.orchestration.execution_context import ExecutionContext
 
+
 class IAnalyzer(ABC):
     """Contrat pour un composant d'analyse qui enrichit l'ExecutionContext."""
 

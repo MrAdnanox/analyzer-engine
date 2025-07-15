@@ -3,6 +3,7 @@ from typing import List
 from core.contracts.analyzer_contract import IAnalyzer
 from .processors.ast_entity_extractor import ASTEntityExtractor
 
+
 class AnalyzerRegistry:
     def __init__(self):
         self._analyzers: List[IAnalyzer] = []
@@ -12,6 +13,7 @@ class AnalyzerRegistry:
 
     def get_analyzers(self) -> List[IAnalyzer]:
         return self._analyzers
+
 
 # Registre "singleton" pour l'application
 analyzer_registry = AnalyzerRegistry()

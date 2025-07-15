@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from ..models.ast_models import NormalizedAST
 
+
 class IParser(ABC):
     """Contrat pour transformer le code source en un AST normalisé."""
 

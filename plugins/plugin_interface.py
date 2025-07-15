@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from ingestion.parsing.parser_registry import ParserRegistry
 from ingestion.analysis.analyzer_registry import AnalyzerRegistry
 
+
 class IJabbarRootPlugin(ABC):
     """
     Le contrat fondamental pour tout plugin externe.
@@ -11,7 +12,9 @@ class IJabbarRootPlugin(ABC):
     """
 
     @abstractmethod
-    def register(self, parser_registry: ParserRegistry, analyzer_registry: AnalyzerRegistry):
+    def register(
+        self, parser_registry: ParserRegistry, analyzer_registry: AnalyzerRegistry
+    ):
         """
         Cette méthode est appelée par le chargeur de plugins au démarrage.
         Elle reçoit les registres centraux de l'application pour que le plugin

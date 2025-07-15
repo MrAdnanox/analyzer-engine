@@ -6,6 +6,7 @@ import subprocess
 import sys
 import os
 
+
 @pytest.mark.e2e
 async def test_cli_ingest_e2e(sqlite_repo, postgres_repo, tmp_path):
     """
@@ -16,16 +17,11 @@ async def test_cli_ingest_e2e(sqlite_repo, postgres_repo, tmp_path):
     sample_code_path.write_text("def my_func():\n    pass\n")
 
     # Act: Exécuter la commande CLI comme un processus externe
-    command = [
-        sys.executable,
-        "cli.py",
-        "ingest",
-        str(sample_code_path)
-    ]
-    
+    command = [sys.executable, "cli.py", "ingest", str(sample_code_path)]
+
     # Utiliser les mêmes BDD que les fixtures pour la validation
     os.environ["SQLITE_DB_PATH"] = sqlite_repo.db_path
-    
+
     result = subprocess.run(command, capture_output=True, text=True, check=False)
 
     # Assert
@@ -36,7 +32,7 @@ async def test_cli_ingest_e2e(sqlite_repo, postgres_repo, tmp_path):
     # 1. Graphe de code (SQLite)
     relationships = await sqlite_repo.find_entity_relationships("my_func")
     assert len(relationships) > 0
-    assert any(r['source'] == 'my_func (FUNCTION)' for r in relationships)
+    assert any(r["source"] == "my_func (FUNCTION)" for r in relationships)
 
     # 2. Données vectorielles (Postgres)
     documents = await postgres_repo.list_documents(10, 0)

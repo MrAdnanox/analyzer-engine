@@ -4,6 +4,7 @@ import ast
 from core.contracts.parser_contract import IParser
 from core.models.ast_models import NormalizedAST, ASTNode
 
+
 class PythonParser(IParser):
     """Implémentation du contrat IParser pour le langage Python."""
 
@@ -24,17 +25,17 @@ class PythonParser(IParser):
         """Transforme récursivement un nœud AST natif en notre ASTNode normalisé."""
         node_type = node.__class__.__name__
         name = self._extract_name(node)
-        
+
         children = [self._transform_node(child) for child in ast.iter_child_nodes(node)]
-        
+
         return ASTNode(
             node_type=node_type,
             name=name,
             children=children,
             metadata={
-                "lineno": getattr(node, 'lineno', -1),
-                "col_offset": getattr(node, 'col_offset', -1)
-            }
+                "lineno": getattr(node, "lineno", -1),
+                "col_offset": getattr(node, "col_offset", -1),
+            },
         )
 
     def _extract_name(self, node: ast.AST) -> str:

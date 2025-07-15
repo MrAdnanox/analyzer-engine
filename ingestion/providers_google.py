@@ -1,6 +1,7 @@
 """
 Google AI provider implementation for embeddings.
 """
+
 import os
 import logging
 from typing import List, Optional
@@ -37,8 +38,10 @@ class GoogleAIEmbedder:
         self.model_name = model_name
         self.api_key = api_key or os.getenv("EMBEDDING_API_KEY")
         if not self.api_key:
-            raise ValueError("Google AI API key not found in EMBEDDING_API_KEY env var.")
-        
+            raise ValueError(
+                "Google AI API key not found in EMBEDDING_API_KEY env var."
+            )
+
         # Configure the genai library
         genai.configure(api_key=self.api_key)
         self.dimension = EMBEDDING_DIMENSION
@@ -62,10 +65,10 @@ class GoogleAIEmbedder:
                 lambda: genai.embed_content(
                     model=self.model_name,
                     content=text,
-                    task_type="retrieval_document" # or "retrieval_query"
-                )
+                    task_type="retrieval_document",  # or "retrieval_query"
+                ),
             )
-            return result['embedding']
+            return result["embedding"]
         except Exception as e:
             logger.error(f"Google AI embedding for single text failed: {e}")
             # Return a zero vector on failure, matching the dimension.
@@ -87,12 +90,10 @@ class GoogleAIEmbedder:
             result = await loop.run_in_executor(
                 None,
                 lambda: genai.embed_content(
-                    model=self.model_name,
-                    content=texts,
-                    task_type="retrieval_document"
-                )
+                    model=self.model_name, content=texts, task_type="retrieval_document"
+                ),
             )
-            return [e for e in result['embedding']]
+            return [e for e in result["embedding"]]
         except Exception as e:
             logger.error(f"Google AI embedding batch failed: {e}")
             # Fallback to zero vectors for the entire failed batch.

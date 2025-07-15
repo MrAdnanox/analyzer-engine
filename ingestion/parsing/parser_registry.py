@@ -1,10 +1,12 @@
 # analyzer-engine/ingestion/parsing/parser_registry.py
 from typing import List
 from core.contracts.parser_contract import IParser
-from .parsers.python_parser import PythonParser # <-- MODIFICATION: Import
+from .parsers.python_parser import PythonParser  # <-- MODIFICATION: Import
+
 
 class ParserRegistry:
     """Registre pour trouver le parseur adéquat."""
+
     def __init__(self):
         self._parsers: List[IParser] = []
 

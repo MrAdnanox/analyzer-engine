@@ -2,10 +2,12 @@
 # L'import de testcontainers est déplacé à l'intérieur de la fixture
 # pour n'être chargé que lorsque la fixture est réellement utilisée.
 import pytest
+
 # from testcontainers.postgres import PostgresContainer <-- SUPPRIMER CETTE LIGNE
 from ingestion.storage.repositories.sqlite_graph_repository import SQLiteGraphRepository
 from ingestion.storage.repositories.postgres_repository import PostgresRepository
 import os
+
 
 @pytest.fixture(scope="function")
 async def sqlite_repo():
@@ -15,6 +17,7 @@ async def sqlite_repo():
     yield repo
     await repo.close()
 
+
 @pytest.fixture(scope="session")
 def postgres_container():
     """Démarre un conteneur PostgreSQL pour la durée de la session de test."""
@@ -22,13 +25,15 @@ def postgres_container():
     # L'import est maintenant à l'intérieur de la fixture.
     # Il ne sera exécuté que si un test demande cette fixture.
     from testcontainers.postgres import PostgresContainer
+
     # ==================================================================
-    
+
     with PostgresContainer("postgres:16-alpine") as postgres:
         os.environ["DATABASE_URL"] = postgres.get_connection_url()
         # Note: l'exécution de psql dans le conteneur serait nécessaire ici.
         # Pour la simplicité, nous supposons que le schéma est appliqué.
         yield postgres
+
 
 @pytest.fixture(scope="function")
 async def postgres_repo(postgres_container):
