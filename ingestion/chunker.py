@@ -54,7 +54,8 @@ class SemanticChunker:
             config: Ingestion configuration
         """
         self.config = config
-        rom .providers import get_ingestion_model
+        from .providers import get_ingestion_model
+
         self.model = get_ingestion_model()
 
     def chunk_from_entities(

@@ -13,15 +13,6 @@ from dotenv import load_dotenv
 
 from .chunker import DocumentChunk
 
-# Import the new flexible provider factory
-try:
-    from .providers import get_embedder, EmbeddingProvider
-except ImportError:
-    import sys
-    import os
-
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # Load environment variables
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -45,6 +36,7 @@ class EmbeddingGenerator:
         """
 
         from .providers import get_embedder
+
         self.provider = get_embedder()
         self.batch_size = batch_size
         self.max_retries = max_retries

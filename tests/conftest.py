@@ -29,9 +29,10 @@ def postgres_container():
     # ==================================================================
 
     with PostgresContainer("postgres:16-alpine") as postgres:
-        os.environ["DATABASE_URL"] = postgres.get_connection_url()
-        # Note: l'exécution de psql dans le conteneur serait nécessaire ici.
-        # Pour la simplicité, nous supposons que le schéma est appliqué.
+        connection_url = postgres.get_connection_url()
+        os.environ["DATABASE_URL"] = connection_url.replace(
+            "postgresql+psycopg2", "postgresql"
+        )
         yield postgres
 
 

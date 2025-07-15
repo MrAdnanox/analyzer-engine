@@ -19,6 +19,7 @@ class ChunkingEmbeddingStage(IPipelineStage):
     """Étape responsable du chunking et de la génération des embeddings."""
 
     def __init__(self):
+        # DÉPLACEZ L'INITIALISATION ICI
         self.config = IngestionConfig()
         self.chunker = SimpleChunker(self.config)
         self.embedder = create_embedder()
@@ -35,7 +36,6 @@ class ChunkingEmbeddingStage(IPipelineStage):
         embedded_chunks = await self.embedder.embed_chunks(doc_chunks)
 
         context.chunks = [asdict(chunk) for chunk in embedded_chunks]
-        # ==============================================================================
 
         logger.info(f"Generated {len(context.chunks)} embedded chunks.")
         return context
