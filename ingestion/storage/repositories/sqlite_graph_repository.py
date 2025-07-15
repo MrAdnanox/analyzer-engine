@@ -190,25 +190,27 @@ class SQLiteGraphRepository(ICodeRepository):
     async def find_entity_relationships(self, entity_name: str) -> List[Dict[str, Any]]:
         """
         Recherche une entité par son nom et retourne toutes ses relations directes (entrantes et sortantes).
-        Cette méthode remplace la fonction `search_code_graph` de l'ancien `graph_utils.py`.
         """
         if not self.conn:
             await self.initialize()
 
-        if not os.path.exists(self.db_path):
-            logger.warning(
-                f"Graph database file '{self.db_path}' not found. Run ingestion first."
-            )
-            return []
+        # ======================= CORRECTION ELITE =======================
+        # La vérification de l'existence du fichier est supprimée. Elle est
+        # 1. Redondante : `initialize()` aurait déjà échoué si le fichier était inaccessible.
+        # 2. Erronée : `os.path.exists(':memory:')` est toujours False, ce qui
+        #    fait échouer les tests en mémoire de manière incorrecte.
+        # La seule vérification nécessaire est celle de la connexion (`self.conn`), déjà présente.
+        # ================================================================
+        # if not os.path.exists(self.db_path): <-- LIGNE SUPPRIMÉE
+        #     logger.warning(
+        #         f"Graph database file '{self.db_path}' not found. Run ingestion first."
+        #     )
+        #     return []
 
         results = []
         try:
             async with self.conn.cursor() as cursor:
-                # La recherche est insensible à la casse et partielle pour plus de flexibilité.
                 search_term = f"%{entity_name}%"
-
-                # Recherche des relations sortantes ET entrantes en une seule requête optimisée.
-                # Utilisation de UNION pour combiner les deux cas de figure.
                 query = """
                     SELECT 
                         s.name AS source_name, s.type AS source_type, 
@@ -230,7 +232,6 @@ class SQLiteGraphRepository(ICodeRepository):
                     JOIN entities t ON r.target_id = t.id
                     WHERE t.name LIKE ?
                 """
-
                 await cursor.execute(query, (search_term, search_term))
                 relationships = await cursor.fetchall()
 
