@@ -1,9 +1,7 @@
-# FICHIER: ingestion/orchestration/stages/analysis_stage.py
+# FICHIER MODIFIÉ: analyzer-engine/ingestion/orchestration/stages/analysis_stage.py
 import logging
 from .base_stage import IPipelineStage
 from ..execution_context import ExecutionContext
-
-# NOUVEL IMPORT STRATÉGIQUE
 from ingestion.analysis.analyzer_registry import analyzer_registry
 
 logger = logging.getLogger(__name__)
@@ -15,13 +13,11 @@ class AnalysisStage(IPipelineStage):
     sur le contexte d'exécution.
     """
 
-    async def execute(self, context: ExecutionContext) -> ExecutionContext:
+    async def execute(self, context: ExecutionContext, job_id: str) -> ExecutionContext:
         logger.info(
             f"AnalysisStage: Running all registered analyzers on {context.file_path}"
         )
-
-        # Vider les listes pour cette étape afin d'éviter les duplications
-        # si le contexte était réutilisé dans un scénario complexe.
+        # ... (le reste de la méthode est déjà correct)
         context.entities = []
         context.relationships = []
 

@@ -1,5 +1,4 @@
 # FICHIER: analyzer-engine/ingestion/storage/repositories/postgres_repository.py (MODIFIÉ)
-import os
 import json
 import logging
 import asyncio  # <-- AJOUTER CET IMPORT
@@ -19,12 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class PostgresRepository(IVectorRepository):
-    def __init__(self):
-        self.database_url = os.getenv("DATABASE_URL")
-        if not self.database_url:
-            raise RepositoryError("DATABASE_URL environment variable not set")
-        self._pool: Optional[Pool] = None
-        logger.info("PostgresRepository instance created.")
+    def __init__(self, pool: Pool):
+        self._pool = pool
+        logger.info("PostgresRepository instance created with provided pool.")
 
     async def initialize(self) -> None:
         if self._pool is not None and not self._pool._closed:
@@ -61,10 +57,7 @@ class PostgresRepository(IVectorRepository):
 
     @asynccontextmanager
     async def _get_connection(self):
-        if not self._pool:
-            await self.initialize()
-
-        # Le reste du code utilise self._pool qui est maintenant propre à l'instance
+        # Le pool est déjà initialisé et géré par l'application.
         async with self._pool.acquire() as connection:
             yield connection
 
